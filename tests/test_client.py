@@ -102,12 +102,12 @@ async def test_fetch_retries_on_503() -> None:
 @pytest.mark.asyncio
 @respx.mock
 async def test_fetch_retry_exhaustion_raises() -> None:
-    """Persistent 503s should surface RetryExhaustedError after max_retries."""
+    """Persistent ConnectError should raise RetryExhaustedError after max_retries."""
     respx.get("https://example.com/robots.txt").mock(
         return_value=httpx.Response(200, text="User-agent: *\nAllow: /\n")
     )
     route = respx.get("https://example.com/down").mock(
-        return_value=httpx.Response(503, text="unavailable")
+        side_effect=httpx.ConnectError("connection refused")
     )
     async with AsyncScrapeClient(_fast_settings(max_retries=2)) as client:
         with pytest.raises(RetryExhaustedError):

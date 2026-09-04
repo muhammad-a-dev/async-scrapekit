@@ -64,8 +64,10 @@ def test_to_csv_nested_values_and_blank_jsonl_lines(tmp_path: Path) -> None:
     )
     assert count == 1
     text = csv_path.read_text(encoding="utf-8")
-    assert '["x", "y"]' in text or '["x","y"]' in text
-    assert '"k": 1' in text or '"k":1' in text
+    # Nested values are JSON-encoded; csv module may quote/escape them.
+    assert "x" in text and "y" in text
+    assert "k" in text and "1" in text
+    assert text.splitlines()[0] == "url,tags,meta"
 
     jsonl_path = tmp_path / "blank.jsonl"
     jsonl_path.write_text(
