@@ -1,14 +1,21 @@
 # async-scrapekit
 
+[![CI](https://github.com/muhammad-a-dev/async-scrapekit/actions/workflows/ci.yml/badge.svg)](https://github.com/muhammad-a-dev/async-scrapekit/actions/workflows/ci.yml)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Typed](https://img.shields.io/badge/typing-py.typed-brightgreen.svg)](src/scrapekit/py.typed)
+
 **A small, serious async scraping toolkit** that demonstrates production judgment: polite defaults, typed APIs, and zero "evasion" features.
 
 Built for portfolio review by [muhammad-a-dev](https://github.com/muhammad-a-dev) — showing how an Upwork-oriented Python engineer approaches scraping that agencies can trust.
 
 > **Ethics (read this first)**  
-> Only scrape sites you are **authorized** to scrape. Respect `robots.txt`, Terms of Service, and rate limits.  
+> Only scrape sites you are **authorized** to scrape (contract, written permission, or your own property).  
+> Respect `robots.txt`, Terms of Service, rate limits, and applicable law.  
 > Do **not** bypass CAPTCHAs, authentication, paywalls, or anti-abuse systems.  
 > This library's **default behavior respects robots.txt and per-host rate limits**.  
-> It intentionally does **not** provide proxy rotation for evasion, CAPTCHA bypass, or auth bypass.
+> It intentionally does **not** provide proxy rotation for evasion, CAPTCHA bypass, or auth bypass.  
+> Examples below use `example.com` / `httpbin.org` as demos — swap in your own authorized targets only.
 
 ---
 
@@ -84,13 +91,14 @@ import asyncio
 from scrapekit import AsyncScrapeClient, get_settings, to_jsonl
 
 async def main() -> None:
+    # Use a descriptive UA and only authorized URLs.
     settings = get_settings(
         user_agent="MyAuthorizedBot/1.0 (+https://example.com/bot)",
         requests_per_second=1.0,
         max_concurrency_per_host=2,
     )
     async with AsyncScrapeClient(settings) as client:
-        # Only use URLs you are authorized to scrape.
+        # Demo host only — replace with a URL you are authorized to scrape.
         page = await client.scrape(
             "https://example.com/",
             css_fields={"heading": "h1"},
@@ -107,11 +115,15 @@ asyncio.run(main())
 python examples/basic_usage.py
 ```
 
+Runs entirely offline with fixture HTML — safe for CI and portfolio demos.
+
 ### Live httpbin demo (network)
 
 ```bash
 python examples/basic_usage.py --live
 ```
+
+Hits `httpbin.org` only (public test service). Do not point `--live` at third-party sites without authorization.
 
 ### CLI
 
@@ -121,7 +133,7 @@ scrapekit https://httpbin.org/html -o page.jsonl --css heading=h1
 
 The demo CLI only permits an allowlist (`httpbin.org`, `example.com`) unless you add `--allow-host`. Adding a host does **not** bypass robots.txt and does **not** grant legal permission — you must already be authorized.
 
-To explicitly ignore a robots disallow (rare, authorized cases only):
+To explicitly ignore a robots disallow (rare, authorized cases only — e.g. you own the site):
 
 ```bash
 scrapekit https://example.com/path --allow-disallowed
@@ -152,6 +164,7 @@ This project is a **toolkit for authorized collection**, not a weapon for unauth
 - Confirm you have the right to access the target (contract, ToS, robots, local law).
 - Keep rate limits conservative; prefer site-provided APIs when available.
 - Identify your bot with an honest User-Agent and contact URL when appropriate.
+- Treat `allow_disallowed=True` as an explicit, logged exception — never the default path.
 
 **This project will not add:**
 
