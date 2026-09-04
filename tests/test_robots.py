@@ -26,6 +26,29 @@ async def test_robots_allows_when_permitted() -> None:
 
 @pytest.mark.asyncio
 @respx.mock
+async def test_ua_specific_robots_deny() -> None:
+    """UA-specific Disallow should block that bot while leaving * allowed."""
+    respx.get("https://example.com/robots.txt").mock(
+        return_value=httpx.Response(
+            200,
+            text=(
+                "User-agent: test-bot\n"
+                "Disallow: /bot-only\n"
+                "\n"
+                "User-agent: *\n"
+                "Allow: /\n"
+            ),
+        )
+    )
+    async with httpx.AsyncClient() as client:
+        blocked = RobotsChecker("test-bot", client=client)
+        other = RobotsChecker("other-bot", client=client)
+        assert await blocked.can_fetch("https://example.com/bot-only") is False
+        assert await other.can_fetch("https://example.com/bot-only") is True
+
+
+@pytest.mark.asyncio
+@respx.mock
 async def test_allow_disallowed_bypasses_robots() -> None:
     respx.get("https://example.com/robots.txt").mock(
         return_value=httpx.Response(200, text="User-agent: *\nDisallow: /\n")

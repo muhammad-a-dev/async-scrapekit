@@ -8,6 +8,7 @@ import respx
 
 from scrapekit.client import AsyncScrapeClient, RobotsDisallowedError
 from scrapekit.config import Settings
+from scrapekit.retry import RetryExhaustedError
 
 
 def _fast_settings(**kwargs: object) -> Settings:
@@ -96,6 +97,23 @@ async def test_fetch_retries_on_503() -> None:
         result = await client.fetch("https://example.com/flaky")
     assert result.text == "yes"
     assert route.call_count == 2
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_fetch_retry_exhaustion_raises() -> None:
+    """Persistent ConnectError should raise RetryExhaustedError after max_retries."""
+    respx.get("https://example.com/robots.txt").mock(
+        return_value=httpx.Response(200, text="User-agent: *\nAllow: /\n")
+    )
+    route = respx.get("https://example.com/down").mock(
+        side_effect=httpx.ConnectError("connection refused")
+    )
+    async with AsyncScrapeClient(_fast_settings(max_retries=2)) as client:
+        with pytest.raises(RetryExhaustedError):
+            await client.fetch("https://example.com/down")
+    # initial attempt + 2 retries
+    assert route.call_count == 3
 
 
 @pytest.mark.asyncio
