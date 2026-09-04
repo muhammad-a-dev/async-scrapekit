@@ -44,6 +44,13 @@ def build_parser() -> argparse.ArgumentParser:
             "async-scrapekit demo CLI. Only scrape sites you are authorized to. "
             "Respects robots.txt and rate limits by default."
         ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=(
+            "examples:\n"
+            "  scrapekit https://httpbin.org/html -o page.jsonl --css heading=h1\n"
+            "  scrapekit https://example.com/ -o page.csv --format csv -v\n"
+            "  scrapekit https://example.com/path --allow-disallowed  # authorized only"
+        ),
     )
     parser.add_argument(
         "url",
