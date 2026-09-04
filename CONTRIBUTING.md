@@ -2,6 +2,8 @@
 
 Thanks for your interest in improving `async-scrapekit`.
 
+By participating, you agree to uphold our [Code of Conduct](CODE_OF_CONDUCT.md).
+
 ## Development setup
 
 ```bash

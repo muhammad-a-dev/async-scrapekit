@@ -9,6 +9,7 @@ dist/
 *.egg-info/
 .eggs/
 *.egg
+*.whl
 
 # Virtual environments
 .venv/
@@ -19,7 +20,11 @@ env/
 .pytest_cache/
 .ruff_cache/
 .mypy_cache/
+.pyright/
+.tox/
+.nox/
 .coverage
+.coverage.*
 htmlcov/
 coverage.xml
 
@@ -33,8 +38,12 @@ coverage.xml
 .vscode/
 *.swp
 .DS_Store
+Thumbs.db
 
-# Local outputs
+# Local outputs / scratch
 output.jsonl
 output.csv
+out.jsonl
+out.csv
 *.log
+.cache/
