@@ -5,6 +5,13 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- Linked the changelog from the README so release history is easy to find.
+- Clarified that polite defaults (robots + per-host limits) are the production path, not optional niceties.
+
 ## [0.1.0] - 2026-09-04
 
 Initial public portfolio release of **async-scrapekit** — a polite, typed async scraping toolkit.

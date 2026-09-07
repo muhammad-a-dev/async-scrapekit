@@ -9,6 +9,8 @@
 
 Built for portfolio review by [muhammad-a-dev](https://github.com/muhammad-a-dev) — showing how an Upwork-oriented Python engineer approaches scraping that agencies can trust.
 
+See [CHANGELOG.md](CHANGELOG.md) for release history.
+
 > **Ethics (read this first)**  
 > Only scrape sites you are **authorized** to scrape (contract, written permission, or your own property).  
 > Respect `robots.txt`, Terms of Service, rate limits, and applicable law.  
@@ -39,6 +41,8 @@ Agencies need the opposite: a **small toolkit** that makes the polite path the e
 | Extraction | BeautifulSoup helpers for title, text, links, CSS fields |
 | Export | JSONL and CSV writers for structured pipelines |
 | CLI | Allowlisted demo crawl/export entrypoint |
+
+**Production default:** keep `respect_robots=true` and conservative RPS/concurrency. Treat `allow_disallowed=True` as a rare, logged exception — never the happy path.
 
 ## Features
 
