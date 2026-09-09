@@ -7,10 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Config tests for boolean and numeric `SCRAPEKIT_*` environment overrides.
+
 ### Changed
 
 - Linked the changelog from the README so release history is easy to find.
 - Clarified that polite defaults (robots + per-host limits) are the production path, not optional niceties.
+- Documented secrets / `.env` handling in `SECURITY.md` and tightened `.env.example` guidance.
 
 ## [0.1.0] - 2026-09-04
 

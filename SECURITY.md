@@ -13,6 +13,13 @@ or email the maintainer via the profile contact on GitHub.
 
 Do **not** open a public issue for undisclosed security problems.
 
+## Secrets and local config
+
+- Copy [`.env.example`](.env.example) to `.env` for local overrides. Never commit `.env` or real credentials.
+- This toolkit is designed so default scrapes need **no API keys**. If you inject tokens into a custom User-Agent, Authorization header, or downstream pipeline, treat them as secrets.
+- Prefer environment variables or a secret manager over hard-coding credentials in examples or tests.
+- Rotate any token that was pasted into chat, a ticket, or a public gist.
+
 ## Scope notes
 
 `async-scrapekit` is an HTTP client toolkit. It intentionally does **not** include:
