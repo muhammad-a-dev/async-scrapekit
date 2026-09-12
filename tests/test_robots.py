@@ -85,6 +85,42 @@ async def test_crawl_delay_parsed() -> None:
         assert delay == 3.0
 
 
+@pytest.mark.asyncio
+@respx.mock
+async def test_robots_5xx_fails_open_and_no_crawl_delay() -> None:
+    """Server errors fetching robots.txt fail open; crawl-delay stays unknown."""
+    respx.get("https://example.com/robots.txt").mock(return_value=httpx.Response(503))
+    async with httpx.AsyncClient() as client:
+        checker = RobotsChecker("test-bot", client=client)
+        assert await checker.can_fetch("https://example.com/page") is True
+        assert await checker.crawl_delay("https://example.com/") is None
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_robots_parser_cached_per_origin() -> None:
+    route = respx.get("https://example.com/robots.txt").mock(
+        return_value=httpx.Response(
+            200,
+            text="User-agent: *\nDisallow: /private\n",
+        )
+    )
+    async with httpx.AsyncClient() as client:
+        checker = RobotsChecker("test-bot", client=client)
+        assert await checker.can_fetch("https://example.com/public") is True
+        assert await checker.can_fetch("https://example.com/other") is True
+        assert route.call_count == 1
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_crawl_delay_none_when_robots_missing() -> None:
+    respx.get("https://example.com/robots.txt").mock(return_value=httpx.Response(404))
+    async with httpx.AsyncClient() as client:
+        checker = RobotsChecker("test-bot", client=client)
+        assert await checker.crawl_delay("https://example.com/") is None
+
+
 def test_origin_of_requires_absolute_url() -> None:
     with pytest.raises(ValueError):
         RobotsChecker.origin_of("/relative")

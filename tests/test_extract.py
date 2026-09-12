@@ -37,6 +37,11 @@ def test_extract_title() -> None:
     assert extract_title(soup) == "Demo Page"
 
 
+def test_extract_title_falls_back_to_heading() -> None:
+    soup = parse_html("<html><body><h1>Only Heading</h1></body></html>")
+    assert extract_title(soup) == "Only Heading"
+
+
 def test_extract_text_strips_scripts() -> None:
     soup = parse_html(SAMPLE)
     text = extract_text(soup)
@@ -51,6 +56,16 @@ def test_extract_links_absolute() -> None:
     assert "https://example.com/about" in links
     assert "https://example.com/contact" in links
     assert all(not link.startswith("#") for link in links)
+
+
+def test_extract_links_skips_mailto_and_javascript() -> None:
+    soup = parse_html(
+        '<a href="mailto:a@b.com">m</a>'
+        '<a href="javascript:void(0)">j</a>'
+        '<a href="/ok">ok</a>'
+    )
+    links = extract_links(soup, base_url="https://example.com/")
+    assert links == ["https://example.com/ok"]
 
 
 def test_extract_meta() -> None:
