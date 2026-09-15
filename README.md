@@ -33,7 +33,7 @@ Agencies need the opposite: a **small toolkit** that makes the polite path the e
 
 | Concern | Behavior |
 | --- | --- |
-| robots.txt | Evaluated via `urllib.robotparser` before each fetch |
+| robots.txt | Evaluated via `urllib.robotparser` before each fetch (5xx robots responses fail open) |
 | Opt-out | Disallowed URLs only if you pass `allow_disallowed=True` explicitly |
 | Rate limits | Per-host concurrency + requests-per-second |
 | Retries | Exponential backoff **with full jitter** for transient errors |
@@ -157,7 +157,7 @@ scrapekit https://example.com/path --allow-disallowed
 | Allow disallowed | `SCRAPEKIT_ALLOW_DISALLOWED` | `false` |
 | Log level | `SCRAPEKIT_LOG_LEVEL` | `INFO` |
 
-See [`.env.example`](.env.example).
+See [`.env.example`](`.env.example`).
 
 ## Ethics & legal
 
