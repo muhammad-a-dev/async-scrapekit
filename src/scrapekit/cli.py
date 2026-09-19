@@ -31,7 +31,19 @@ DEFAULT_ALLOWLIST = frozenset(
 
 
 def _host_allowed(url: str, allowlist: frozenset[str]) -> bool:
-    host = urlparse(url).netloc.lower()
+    """Return True if *url* targets an allowlisted http(s) host.
+
+    Rejects null bytes, non-http(s) schemes, and missing hosts so the demo
+    CLI cannot be pointed at ``file://``, ``ftp://``, or similarly unsafe
+    targets that merely embed an allowlisted hostname string.
+    Hostname (not full netloc) is compared so ``:port`` still works.
+    """
+    if "\x00" in url:
+        return False
+    parsed = urlparse(url)
+    if parsed.scheme not in ("http", "https"):
+        return False
+    host = (parsed.hostname or "").lower()
     if not host:
         return False
     return host in allowlist

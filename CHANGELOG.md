@@ -21,6 +21,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Clarified that polite defaults (robots + per-host limits) are the production path, not optional niceties.
 - Documented secrets / `.env` handling in `SECURITY.md` and tightened `.env.example` guidance.
 
+### Security
+
+- Demo CLI allowlist now requires `http`/`https`, compares hostname (ports OK), and rejects
+  null bytes plus non-HTTP schemes (`file://`, `ftp://`, etc.) before any fetch.
+
 ## [0.1.0] - 2026-09-04
 
 Initial public portfolio release of **async-scrapekit** — a polite, typed async scraping toolkit.
