@@ -65,6 +65,15 @@ class Settings(BaseSettings):
             "Must be set explicitly; defaults to False (respect robots)."
         ),
     )
+    block_private_hosts: bool = Field(
+        default=True,
+        description=(
+            "If True (default), refuse http(s) URLs whose host is loopback, "
+            "private, link-local, multicast, reserved, or a known cloud-metadata "
+            "name. Also enforced on redirect targets via an httpx request hook. "
+            "Set False only when you intentionally scrape intranet targets."
+        ),
+    )
     log_level: str = Field(
         default="INFO",
         description="Logging level (DEBUG, INFO, WARNING, ERROR).",

@@ -20,6 +20,17 @@ Do **not** open a public issue for undisclosed security problems.
 - Prefer environment variables or a secret manager over hard-coding credentials in examples or tests.
 - Rotate any token that was pasted into chat, a ticket, or a public gist.
 
+## Outbound URL safety
+
+- The library client defaults to **blocking private network targets**: loopback,
+  RFC1918 private ranges, link-local (including `169.254.169.254`), multicast,
+  reserved addresses, and known cloud-metadata hostnames.
+- Redirects are checked too (httpx request hook) so a public URL cannot bounce
+  into an internal endpoint.
+- Set `SCRAPEKIT_BLOCK_PRIVATE_HOSTS=false` or `block_private_hosts=False` only
+  when you intentionally scrape intranet hosts you are authorized to reach.
+- The demo CLI still applies its own host allowlist on top of these checks.
+
 ## Scope notes
 
 `async-scrapekit` is an HTTP client toolkit. It intentionally does **not** include:
