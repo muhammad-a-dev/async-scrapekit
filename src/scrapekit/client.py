@@ -15,6 +15,7 @@ from scrapekit.extract import ExtractedPage, extract_page
 from scrapekit.rate_limit import HostRateLimiter
 from scrapekit.retry import is_transient_response, with_retries
 from scrapekit.robots import RobotsChecker
+from scrapekit.ssrf import assert_http_url_allowed
 
 logger = logging.getLogger(__name__)
 
@@ -51,6 +52,8 @@ class AsyncScrapeClient:
     - robots.txt is respected unless ``allow_disallowed=True``
     - per-host concurrency and RPS limits are enforced
     - transient errors are retried with exponential backoff + jitter
+    - private / loopback / metadata hosts are blocked unless
+      ``block_private_hosts=False`` (also checked on redirects)
     """
 
     def __init__(
@@ -63,10 +66,16 @@ class AsyncScrapeClient:
         self.settings = settings or get_settings(**setting_overrides)
         self._owns_client = client is None
         headers = {"User-Agent": self.settings.user_agent}
+        event_hooks = (
+            {"request": [self._ssrf_request_hook]}
+            if self.settings.block_private_hosts
+            else None
+        )
         self._client = client or httpx.AsyncClient(
             headers=headers,
             timeout=self.settings.timeout,
             follow_redirects=True,
+            event_hooks=event_hooks,
         )
         if client is not None and "User-Agent" not in client.headers:
             self._client.headers["User-Agent"] = self.settings.user_agent
@@ -110,6 +119,14 @@ class AsyncScrapeClient:
             raise ValueError(f"URL missing host: {url!r}")
         return host
 
+    async def _ssrf_request_hook(self, request: httpx.Request) -> None:
+        """Async httpx request hook — covers redirect targets when we own the client."""
+        assert_http_url_allowed(str(request.url))
+
+    def _guard_url(self, url: str) -> None:
+        if self.settings.block_private_hosts:
+            assert_http_url_allowed(url)
+
     async def fetch(
         self,
         url: str,
@@ -120,6 +137,7 @@ class AsyncScrapeClient:
         **request_kwargs: Any,
     ) -> FetchResult:
         """Fetch *url* with robots checks, rate limiting, and retries."""
+        self._guard_url(url)
         bypass = (
             self.settings.allow_disallowed if allow_disallowed is None else allow_disallowed
         )
