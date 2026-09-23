@@ -25,6 +25,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Demo CLI allowlist now requires `http`/`https`, compares hostname (ports OK), and rejects
   null bytes plus non-HTTP schemes (`file://`, `ftp://`, etc.) before any fetch.
+- `AsyncScrapeClient` blocks loopback, private, link-local, and cloud-metadata hosts by
+  default (`block_private_hosts=True`), including redirect targets via an httpx request
+  hook. Opt out only for intentional intranet scrapes.
 
 ## [0.1.0] - 2026-09-04
 
