@@ -8,6 +8,15 @@ from urllib.parse import urljoin
 
 from bs4 import BeautifulSoup, Tag
 
+# Schemes that must not leak into exported link lists.
+_SKIP_HREF_PREFIXES = (
+    "javascript:",
+    "mailto:",
+    "data:",
+    "vbscript:",
+    "tel:",
+)
+
 
 @dataclass(slots=True)
 class ExtractedPage:
@@ -65,7 +74,10 @@ def extract_links(
         if not isinstance(anchor, Tag):
             continue
         href = str(anchor.get("href", "")).strip()
-        if not href or href.startswith(("#", "javascript:", "mailto:")):
+        if not href or href.startswith("#"):
+            continue
+        lower = href.lower()
+        if lower.startswith(_SKIP_HREF_PREFIXES):
             continue
         if absolute and base_url:
             href = urljoin(base_url, href)

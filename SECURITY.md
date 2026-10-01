@@ -24,12 +24,22 @@ Do **not** open a public issue for undisclosed security problems.
 
 - The library client defaults to **blocking private network targets**: loopback,
   RFC1918 private ranges, link-local (including `169.254.169.254`), multicast,
-  reserved addresses, and known cloud-metadata hostnames.
+  reserved addresses, and known cloud-metadata hostnames (`metadata.google.internal`,
+  `metadata.goog`, and `*.localhost`).
+- IPv6 loopback / ULA / link-local literals (for example `::1`, `fc00::/7`, `fe80::/10`)
+  are blocked the same way as IPv4 private ranges.
+- URLs that embed userinfo (`https://user:pass@host/`) are rejected so credentials
+  are not sent or logged by accident.
 - Redirects are checked too (httpx request hook) so a public URL cannot bounce
   into an internal endpoint.
 - Set `SCRAPEKIT_BLOCK_PRIVATE_HOSTS=false` or `block_private_hosts=False` only
   when you intentionally scrape intranet hosts you are authorized to reach.
 - The demo CLI still applies its own host allowlist on top of these checks.
+
+## Extraction hygiene
+
+- `extract_links` drops `javascript:`, `mailto:`, `data:`, `vbscript:`, and `tel:`
+  hrefs (case-insensitive) so those values do not land in JSONL/CSV exports.
 
 ## Scope notes
 

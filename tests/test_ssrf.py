@@ -35,10 +35,15 @@ def _fast_settings(**kwargs: object) -> Settings:
         "127.0.0.1",
         "localhost",
         "metadata.google.internal",
+        "metadata.goog",
         "169.254.169.254",
         "10.0.0.1",
         "192.168.1.1",
         "0.0.0.0",
+        "::1",
+        "fc00::1",
+        "fe80::1",
+        "foo.localhost",
     ],
 )
 def test_is_blocked_url_host(host: str) -> None:
@@ -56,6 +61,15 @@ def test_assert_http_url_allowed_rejects_schemes_and_null() -> None:
     with pytest.raises(BlockedURLError, match="null"):
         assert_http_url_allowed("https://example.com\x00/")
     assert_http_url_allowed("https://example.com/ok")
+
+
+def test_assert_http_url_allowed_rejects_userinfo_and_ipv6_loopback() -> None:
+    with pytest.raises(BlockedURLError, match="userinfo"):
+        assert_http_url_allowed("https://user:pass@example.com/")
+    with pytest.raises(BlockedURLError, match="userinfo"):
+        assert_http_url_allowed("https://user@example.com/path")
+    with pytest.raises(BlockedURLError, match="::1"):
+        assert_http_url_allowed("http://[::1]/")
 
 
 @pytest.mark.asyncio
@@ -87,4 +101,4 @@ async def test_fetch_allows_private_when_opted_out() -> None:
     )
     async with AsyncScrapeClient(_fast_settings(block_private_hosts=False)) as client:
         result = await client.fetch("http://10.0.0.5/page")
-    assert result.text == "intranet"
+        assert result.text == "intranet"

@@ -12,8 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Config tests for boolean and numeric `SCRAPEKIT_*` environment overrides.
 - Robots edge tests for HTTP 5xx fail-open, per-origin parser cache, and missing crawl-delay.
 - Extract tests for title fallback to headings and skipping `mailto:` / `javascript:` links.
+- Extract tests for skipping `data:` / `vbscript:` / `tel:` href schemes (case-insensitive).
 - Retry tests for 408/425/502/504 statuses, timeout/protocol exceptions, non-transient re-raise,
   persistent retryable-result exhaustion, `RetryExhaustedError.last_exception`, and `on_retry`.
+- SSRF offline coverage for IPv6 loopback/ULA/link-local, `*.localhost`, and URL userinfo rejection.
 
 ### Changed
 
@@ -28,6 +30,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `AsyncScrapeClient` blocks loopback, private, link-local, and cloud-metadata hosts by
   default (`block_private_hosts=True`), including redirect targets via an httpx request
   hook. Opt out only for intentional intranet scrapes.
+- SSRF checks also reject URL userinfo and treat `metadata.goog` as a blocked hostname.
+- `extract_links` skips `data:`, `vbscript:`, and `tel:` hrefs (plus existing `javascript:` /
+  `mailto:`) so those schemes do not appear in exported link lists.
 
 ## [0.1.0] - 2026-09-04
 

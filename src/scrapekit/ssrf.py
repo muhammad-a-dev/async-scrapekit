@@ -18,6 +18,7 @@ BLOCKED_HOSTNAMES = frozenset(
         "localhost",
         "metadata",
         "metadata.google.internal",
+        "metadata.goog",
     }
 )
 
@@ -54,6 +55,8 @@ def assert_http_url_allowed(url: str) -> None:
     parsed = urlparse(url)
     if parsed.scheme.lower() not in ALLOWED_SCHEMES:
         raise BlockedURLError(f"Disallowed URL scheme: {parsed.scheme!r}")
+    if parsed.username is not None or parsed.password is not None:
+        raise BlockedURLError("URL must not include userinfo")
     host = parsed.hostname
     if not host:
         raise BlockedURLError("URL must include a host")
