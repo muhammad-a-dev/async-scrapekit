@@ -36,6 +36,16 @@ Do **not** open a public issue for undisclosed security problems.
   when you intentionally scrape intranet hosts you are authorized to reach.
 - The demo CLI still applies its own host allowlist on top of these checks.
 
+## Response size limits
+
+- Fetches reject bodies larger than `max_response_bytes` (default 10 MiB,
+  override with `SCRAPEKIT_MAX_RESPONSE_BYTES`).
+- When `Content-Length` is present and over the limit, the client raises
+  `ResponseTooLargeError` before treating the body as usable scrape input.
+- The loaded body length is checked the same way when the header is missing or
+  understates the size, so a single huge page cannot quietly exhaust memory
+  during extraction.
+
 ## Extraction hygiene
 
 - `extract_links` drops `javascript:`, `mailto:`, `data:`, `vbscript:`, and `tel:`

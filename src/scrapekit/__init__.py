@@ -2,7 +2,12 @@
 
 from __future__ import annotations
 
-from scrapekit.client import AsyncScrapeClient, FetchResult, RobotsDisallowedError
+from scrapekit.client import (
+    AsyncScrapeClient,
+    FetchResult,
+    ResponseTooLargeError,
+    RobotsDisallowedError,
+)
 from scrapekit.config import Settings, get_settings
 from scrapekit.export import records_from_jsonl, to_csv, to_jsonl
 from scrapekit.extract import ExtractedPage, extract_page, parse_html
@@ -21,6 +26,7 @@ __all__ = [
     "HostRateLimiter",
     "RetryExhaustedError",
     "RobotsChecker",
+    "ResponseTooLargeError",
     "RobotsDisallowedError",
     "Settings",
     "__version__",

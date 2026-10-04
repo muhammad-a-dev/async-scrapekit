@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `Settings.max_response_bytes` (default 10 MiB) and `ResponseTooLargeError` so
+  oversized scrape responses are rejected instead of loaded into extraction.
 - Config tests for boolean and numeric `SCRAPEKIT_*` environment overrides.
 - Robots edge tests for HTTP 5xx fail-open, per-origin parser cache, and missing crawl-delay.
 - Extract tests for title fallback to headings and skipping `mailto:` / `javascript:` links.
@@ -25,6 +27,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 
+- Cap response bodies at `max_response_bytes` (Content-Length and loaded body),
+  documented in `SECURITY.md` and `.env.example`.
 - Demo CLI allowlist now requires `http`/`https`, compares hostname (ports OK), and rejects
   null bytes plus non-HTTP schemes (`file://`, `ftp://`, etc.) before any fetch.
 - `AsyncScrapeClient` blocks loopback, private, link-local, and cloud-metadata hosts by

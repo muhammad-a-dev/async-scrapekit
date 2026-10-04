@@ -74,6 +74,15 @@ class Settings(BaseSettings):
             "Set False only when you intentionally scrape intranet targets."
         ),
     )
+    max_response_bytes: int = Field(
+        default=10_485_760,
+        ge=1,
+        description=(
+            "Maximum response body size in bytes (default 10 MiB). "
+            "Fetches that declare a larger Content-Length, or whose body exceeds "
+            "this limit, raise ResponseTooLargeError to avoid memory blowups."
+        ),
+    )
     log_level: str = Field(
         default="INFO",
         description="Logging level (DEBUG, INFO, WARNING, ERROR).",

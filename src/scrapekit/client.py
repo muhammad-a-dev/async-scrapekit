@@ -24,6 +24,10 @@ class RobotsDisallowedError(PermissionError):
     """Raised when robots.txt forbids a URL and allow_disallowed is False."""
 
 
+class ResponseTooLargeError(ValueError):
+    """Raised when a response body exceeds ``Settings.max_response_bytes``."""
+
+
 @dataclass(slots=True, frozen=True)
 class FetchResult:
     """Normalized fetch outcome."""
@@ -54,6 +58,7 @@ class AsyncScrapeClient:
     - transient errors are retried with exponential backoff + jitter
     - private / loopback / metadata hosts are blocked unless
       ``block_private_hosts=False`` (also checked on redirects)
+    - response bodies larger than ``max_response_bytes`` are rejected
     """
 
     def __init__(
@@ -120,12 +125,37 @@ class AsyncScrapeClient:
         return host
 
     async def _ssrf_request_hook(self, request: httpx.Request) -> None:
-        """Async httpx request hook — covers redirect targets when we own the client."""
+        """Async httpx request hook that covers redirect targets when we own the client."""
         assert_http_url_allowed(str(request.url))
 
     def _guard_url(self, url: str) -> None:
         if self.settings.block_private_hosts:
             assert_http_url_allowed(url)
+
+    def _assert_response_size(self, response: httpx.Response) -> None:
+        """Reject responses that exceed ``max_response_bytes``.
+
+        Checks ``Content-Length`` first when present, then the loaded body.
+        Oversized responses raise :class:`ResponseTooLargeError` (not retried).
+        """
+        max_bytes = self.settings.max_response_bytes
+        header = response.headers.get("content-length")
+        if header is not None:
+            try:
+                declared = int(header)
+            except ValueError:
+                declared = -1
+            if declared > max_bytes:
+                raise ResponseTooLargeError(
+                    f"Response Content-Length {declared} exceeds "
+                    f"max_response_bytes={max_bytes}"
+                )
+        body_len = len(response.content)
+        if body_len > max_bytes:
+            raise ResponseTooLargeError(
+                f"Response body ({body_len} bytes) exceeds "
+                f"max_response_bytes={max_bytes}"
+            )
 
     async def fetch(
         self,
@@ -179,6 +209,7 @@ class AsyncScrapeClient:
             cap=self.settings.backoff_cap,
             should_retry_result=is_transient_response,
         )
+        self._assert_response_size(response)
 
         elapsed_ms = response.elapsed.total_seconds() * 1000.0 if response.elapsed else 0.0
         logger.info("Fetched %s -> %s (%.1fms)", url, response.status_code, elapsed_ms)

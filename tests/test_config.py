@@ -13,6 +13,7 @@ def test_defaults() -> None:
     assert s.respect_robots is True
     assert s.allow_disallowed is False
     assert s.max_concurrency_per_host >= 1
+    assert s.max_response_bytes == 10_485_760
     assert "async-scrapekit" in s.user_agent
 
 
@@ -31,6 +32,7 @@ def test_env_bool_and_numeric_overrides() -> None:
         "SCRAPEKIT_REQUESTS_PER_SECOND": "2.5",
         "SCRAPEKIT_MAX_RETRIES": "0",
         "SCRAPEKIT_TIMEOUT": "12.5",
+        "SCRAPEKIT_MAX_RESPONSE_BYTES": "2048",
     }
     with mock.patch.dict(os.environ, env, clear=False):
         s = Settings()
@@ -40,6 +42,7 @@ def test_env_bool_and_numeric_overrides() -> None:
         assert s.requests_per_second == 2.5
         assert s.max_retries == 0
         assert s.timeout == 12.5
+        assert s.max_response_bytes == 2048
 
 
 def test_get_settings_overrides() -> None:
