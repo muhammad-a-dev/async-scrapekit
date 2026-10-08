@@ -37,6 +37,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - SSRF checks also reject URL userinfo and treat `metadata.goog` as a blocked hostname.
 - `extract_links` skips `data:`, `vbscript:`, and `tel:` hrefs (plus existing `javascript:` /
   `mailto:`) so those schemes do not appear in exported link lists.
+- `to_csv` neutralizes spreadsheet formula prefixes (`=`, `+`, `-`, `@`, tab, CR) in
+  string cells by prefixing `'`, so scraped text cannot run as a formula when the
+  export is opened in Excel or Sheets. Opt out with `escape_formulas=False`.
 
 ## [0.1.0] - 2026-09-04
 

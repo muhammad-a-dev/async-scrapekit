@@ -50,6 +50,10 @@ Do **not** open a public issue for undisclosed security problems.
 
 - `extract_links` drops `javascript:`, `mailto:`, `data:`, `vbscript:`, and `tel:`
   hrefs (case-insensitive) so those values do not land in JSONL/CSV exports.
+- `to_csv` prefixes string cells that start with `=`, `+`, `-`, `@`, tab, or
+  carriage return with `'` (CSV formula injection). Scraped titles and text are
+  untrusted, so this is on by default; numbers are not changed. Use
+  `escape_formulas=False` only for CSVs that never reach a spreadsheet app.
 
 ## Scope notes
 

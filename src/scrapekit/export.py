@@ -19,10 +19,25 @@ def _normalize_record(record: Mapping[str, Any] | Any) -> dict[str, Any]:
     raise TypeError(f"Cannot export record of type {type(record)!r}")
 
 
-def _stringify(value: Any) -> str:
+# Leading characters that spreadsheet apps (Excel, LibreOffice, Sheets) treat
+# as the start of a formula. Scraped text is untrusted, so a page title like
+# ``=HYPERLINK("http://evil.example", "click")`` must not run when the CSV is
+# opened. See OWASP "CSV Injection".
+_FORMULA_PREFIXES = ("=", "+", "-", "@", "\t", "\r")
+
+
+def _neutralize_formula(text: str) -> str:
+    if text.startswith(_FORMULA_PREFIXES):
+        return "'" + text
+    return text
+
+
+def _stringify(value: Any, *, escape_formulas: bool = False) -> str:
     if value is None:
         return ""
-    if isinstance(value, (str, int, float, bool)):
+    if isinstance(value, str):
+        return _neutralize_formula(value) if escape_formulas else value
+    if isinstance(value, (int, float, bool)):
         return str(value)
     return json.dumps(value, ensure_ascii=False, default=str)
 
@@ -52,11 +67,18 @@ def to_csv(
     *,
     fieldnames: Sequence[str] | None = None,
     append: bool = False,
+    escape_formulas: bool = True,
 ) -> int:
     """Write records as CSV. Nested values are JSON-encoded.
 
     When *fieldnames* is omitted, columns are inferred from the first record
     and any additional keys discovered later are appended.
+
+    String cells that start with ``=``, ``+``, ``-``, ``@``, tab, or carriage
+    return are prefixed with ``'`` so spreadsheet apps show them as text
+    instead of evaluating them as formulas. Numbers are left untouched. Pass
+    ``escape_formulas=False`` only when the CSV is never opened in a
+    spreadsheet and you need the raw strings.
     """
     destination = Path(path)
     destination.parent.mkdir(parents=True, exist_ok=True)
@@ -88,7 +110,9 @@ def to_csv(
         if write_header:
             writer.writeheader()
         for row in normalized:
-            writer.writerow({k: _stringify(row.get(k)) for k in fieldnames})
+            writer.writerow(
+                {k: _stringify(row.get(k), escape_formulas=escape_formulas) for k in fieldnames}
+            )
     return len(normalized)
 
 
