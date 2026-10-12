@@ -40,6 +40,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `to_csv` neutralizes spreadsheet formula prefixes (`=`, `+`, `-`, `@`, tab, CR) in
   string cells by prefixing `'`, so scraped text cannot run as a formula when the
   export is opened in Excel or Sheets. Opt out with `escape_formulas=False`.
+- robots.txt is streamed and capped at 500 KiB (`MAX_ROBOTS_BYTES`, per RFC 9309
+  section 2.5). Content past the cap and any partial trailing line are ignored.
 
 ## [0.1.0] - 2026-09-04
 

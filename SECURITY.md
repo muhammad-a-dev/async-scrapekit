@@ -45,6 +45,10 @@ Do **not** open a public issue for undisclosed security problems.
 - The loaded body length is checked the same way when the header is missing or
   understates the size, so a single huge page cannot quietly exhaust memory
   during extraction.
+- robots.txt is streamed and only the first 500 KiB is read (the minimum
+  RFC 9309 asks parsers to handle). Anything past that is ignored, and a rule
+  cut off mid-line at the limit is dropped instead of evaluated, so a hostile
+  origin cannot use a giant robots.txt to exhaust memory.
 
 ## Extraction hygiene
 

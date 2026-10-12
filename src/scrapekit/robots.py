@@ -10,6 +10,34 @@ import httpx
 
 logger = logging.getLogger(__name__)
 
+#: RFC 9309 section 2.5: crawlers must parse at least 500 KiB of robots.txt
+#: and may ignore anything past their limit. We read at most this many bytes.
+MAX_ROBOTS_BYTES = 500 * 1024
+
+
+async def _read_capped_text(response: httpx.Response, limit: int = MAX_ROBOTS_BYTES) -> str:
+    """Stream at most *limit* bytes of *response* and decode them as text.
+
+    Bytes past the limit are never buffered. When the body is truncated the
+    trailing partial line is dropped so a half-read rule is not evaluated.
+    """
+    buf = bytearray()
+    truncated = False
+    async for chunk in response.aiter_bytes():
+        buf.extend(chunk)
+        if len(buf) > limit:
+            truncated = True
+            del buf[limit:]
+            break
+    body = bytes(buf)
+    if truncated:
+        logger.warning(
+            "robots.txt from %s exceeds %d bytes; ignoring the rest", response.url, limit
+        )
+        cut = body.rfind(b"\n")
+        body = body[: cut + 1] if cut != -1 else b""
+    return body.decode(response.encoding or "utf-8", errors="replace")
+
 
 class RobotsChecker:
     """Cache and evaluate robots.txt rules per origin.
@@ -77,29 +105,14 @@ class RobotsChecker:
 
         try:
             if self._client is not None:
-                response = await self._client.get(robots_url)
-                if response.status_code == 404:
-                    parser.parse([])
-                elif response.status_code >= 400:
-                    logger.warning(
-                        "Failed to fetch robots.txt from %s (%s)",
-                        robots_url,
-                        response.status_code,
-                    )
-                    self._failed_origins.add(origin)
-                    return None
-                else:
-                    parser.parse(response.text.splitlines())
+                lines = await self._fetch_lines(self._client, robots_url)
             else:
                 async with httpx.AsyncClient(timeout=10.0) as tmp:
-                    response = await tmp.get(robots_url)
-                    if response.status_code == 404:
-                        parser.parse([])
-                    elif response.status_code >= 400:
-                        self._failed_origins.add(origin)
-                        return None
-                    else:
-                        parser.parse(response.text.splitlines())
+                    lines = await self._fetch_lines(tmp, robots_url)
+            if lines is None:
+                self._failed_origins.add(origin)
+                return None
+            parser.parse(lines)
         except httpx.HTTPError as exc:
             logger.warning("Error fetching robots.txt from %s: %s", robots_url, exc)
             self._failed_origins.add(origin)
@@ -107,3 +120,19 @@ class RobotsChecker:
 
         self._parsers[origin] = parser
         return parser
+
+    @staticmethod
+    async def _fetch_lines(client: httpx.AsyncClient, robots_url: str) -> list[str] | None:
+        """Return robots.txt lines, ``[]`` for 404, or ``None`` on other HTTP errors."""
+        async with client.stream("GET", robots_url) as response:
+            if response.status_code == 404:
+                return []
+            if response.status_code >= 400:
+                logger.warning(
+                    "Failed to fetch robots.txt from %s (%s)",
+                    robots_url,
+                    response.status_code,
+                )
+                return None
+            text = await _read_capped_text(response)
+        return text.splitlines()
