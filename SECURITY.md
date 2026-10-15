@@ -32,8 +32,14 @@ Do **not** open a public issue for undisclosed security problems.
   are not sent or logged by accident.
 - Redirects are checked too (httpx request hook) so a public URL cannot bounce
   into an internal endpoint.
+- This also covers an `httpx.AsyncClient` you pass in with `client=`. The
+  `ssrf_request_hook` is appended to that client's request hooks once, after
+  any hooks it already has, so it checks the final URL of every hop. The hook
+  stays on the client after `AsyncScrapeClient` closes. `ssrf_request_hook` is
+  exported if you want the same check on clients you use elsewhere.
 - Set `SCRAPEKIT_BLOCK_PRIVATE_HOSTS=false` or `block_private_hosts=False` only
   when you intentionally scrape intranet hosts you are authorized to reach.
+  With the opt-out, an injected client is left untouched.
 - The demo CLI still applies its own host allowlist on top of these checks.
 
 ## Response size limits

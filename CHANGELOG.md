@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `Settings.max_response_bytes` (default 10 MiB) and `ResponseTooLargeError` so
   oversized scrape responses are rejected instead of loaded into extraction.
+- `ssrf_request_hook`, a public httpx request hook that applies the same SSRF host
+  checks to every hop (redirects included) on clients you build yourself.
 - Config tests for boolean and numeric `SCRAPEKIT_*` environment overrides.
 - Robots edge tests for HTTP 5xx fail-open, per-origin parser cache, and missing crawl-delay.
 - Extract tests for title fallback to headings and skipping `mailto:` / `javascript:` links.
@@ -18,6 +20,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Retry tests for 408/425/502/504 statuses, timeout/protocol exceptions, non-transient re-raise,
   persistent retryable-result exhaustion, `RetryExhaustedError.last_exception`, and `on_retry`.
 - SSRF offline coverage for IPv6 loopback/ULA/link-local, `*.localhost`, and URL userinfo rejection.
+- SSRF tests for injected clients: blocked redirect to the metadata IP, public redirects
+  still followed, hook added once after user hooks, and opt-out leaving the client alone.
 
 ### Changed
 
@@ -42,6 +46,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   export is opened in Excel or Sheets. Opt out with `escape_formulas=False`.
 - robots.txt is streamed and capped at 500 KiB (`MAX_ROBOTS_BYTES`, per RFC 9309
   section 2.5). Content past the cap and any partial trailing line are ignored.
+- An `httpx.AsyncClient` passed via `client=` now gets the SSRF redirect hook too.
+  Before, only the first URL was checked, so a client created with
+  `follow_redirects=True` could follow a 302 into a private or metadata host. The
+  hook is appended once, after any existing request hooks.
 
 ## [0.1.0] - 2026-09-04
 

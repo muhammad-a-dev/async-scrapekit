@@ -4,12 +4,17 @@ Blocks loopback, private, link-local, multicast, reserved, and well-known
 cloud-metadata hostnames. Literal IP hosts are classified with
 :mod:`ipaddress`; hostname strings in the blocklist (and ``*.localhost``)
 are rejected without DNS lookup so unit tests stay offline.
+
+:func:`ssrf_request_hook` wraps the same check as an httpx ``request`` event
+hook so every redirect hop is validated, not just the first URL.
 """
 
 from __future__ import annotations
 
 import ipaddress
 from urllib.parse import urlparse
+
+import httpx
 
 ALLOWED_SCHEMES = frozenset({"http", "https"})
 
@@ -62,3 +67,14 @@ def assert_http_url_allowed(url: str) -> None:
         raise BlockedURLError("URL must include a host")
     if is_blocked_url_host(host):
         raise BlockedURLError(f"URL host is not allowed: {host!r}")
+
+
+async def ssrf_request_hook(request: httpx.Request) -> None:
+    """httpx ``request`` event hook that applies :func:`assert_http_url_allowed`.
+
+    httpx runs request hooks before every hop, including redirects, so a
+    client with this hook cannot be bounced from a public URL into a private
+    or cloud-metadata host. Attach it to your own ``httpx.AsyncClient`` with
+    ``event_hooks={"request": [ssrf_request_hook]}``.
+    """
+    assert_http_url_allowed(str(request.url))

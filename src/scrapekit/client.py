@@ -15,7 +15,7 @@ from scrapekit.extract import ExtractedPage, extract_page
 from scrapekit.rate_limit import HostRateLimiter
 from scrapekit.retry import is_transient_response, with_retries
 from scrapekit.robots import RobotsChecker
-from scrapekit.ssrf import assert_http_url_allowed
+from scrapekit.ssrf import assert_http_url_allowed, ssrf_request_hook
 
 logger = logging.getLogger(__name__)
 
@@ -57,7 +57,8 @@ class AsyncScrapeClient:
     - per-host concurrency and RPS limits are enforced
     - transient errors are retried with exponential backoff + jitter
     - private / loopback / metadata hosts are blocked unless
-      ``block_private_hosts=False`` (also checked on redirects)
+      ``block_private_hosts=False`` (also checked on redirects, including
+      when you pass your own ``client=``)
     - response bodies larger than ``max_response_bytes`` are rejected
     """
 
@@ -72,7 +73,7 @@ class AsyncScrapeClient:
         self._owns_client = client is None
         headers = {"User-Agent": self.settings.user_agent}
         event_hooks = (
-            {"request": [self._ssrf_request_hook]}
+            {"request": [ssrf_request_hook]}
             if self.settings.block_private_hosts
             else None
         )
@@ -82,8 +83,11 @@ class AsyncScrapeClient:
             follow_redirects=True,
             event_hooks=event_hooks,
         )
-        if client is not None and "User-Agent" not in client.headers:
-            self._client.headers["User-Agent"] = self.settings.user_agent
+        if client is not None:
+            if "User-Agent" not in client.headers:
+                self._client.headers["User-Agent"] = self.settings.user_agent
+            if self.settings.block_private_hosts:
+                self._install_ssrf_hook(client)
 
         self._robots = RobotsChecker(self.settings.user_agent, client=self._client)
         self._limiter = HostRateLimiter(
@@ -124,9 +128,23 @@ class AsyncScrapeClient:
             raise ValueError(f"URL missing host: {url!r}")
         return host
 
-    async def _ssrf_request_hook(self, request: httpx.Request) -> None:
-        """Async httpx request hook that covers redirect targets when we own the client."""
-        assert_http_url_allowed(str(request.url))
+    @staticmethod
+    def _install_ssrf_hook(client: httpx.AsyncClient) -> None:
+        """Attach :func:`ssrf_request_hook` to a caller-supplied client, once.
+
+        Without this, an injected client with ``follow_redirects=True`` would
+        follow a redirect into a private or metadata host, because only the
+        first URL passed to :meth:`fetch` was checked. Existing request hooks
+        are kept and run first, so the check sees the final request URL.
+        """
+        hooks = client.event_hooks
+        request_hooks = list(hooks.get("request", []))
+        if ssrf_request_hook not in request_hooks:
+            request_hooks.append(ssrf_request_hook)
+        client.event_hooks = {
+            "request": request_hooks,
+            "response": list(hooks.get("response", [])),
+        }
 
     def _guard_url(self, url: str) -> None:
         if self.settings.block_private_hosts:
