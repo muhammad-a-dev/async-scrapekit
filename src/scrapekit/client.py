@@ -60,6 +60,7 @@ class AsyncScrapeClient:
       ``block_private_hosts=False`` (also checked on redirects, including
       when you pass your own ``client=``)
     - response bodies larger than ``max_response_bytes`` are rejected
+    - at most ``max_redirects`` redirects are followed per fetch
     """
 
     def __init__(
@@ -81,6 +82,7 @@ class AsyncScrapeClient:
             headers=headers,
             timeout=self.settings.timeout,
             follow_redirects=True,
+            max_redirects=self.settings.max_redirects,
             event_hooks=event_hooks,
         )
         if client is not None:

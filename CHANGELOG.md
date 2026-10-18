@@ -22,6 +22,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - SSRF offline coverage for IPv6 loopback/ULA/link-local, `*.localhost`, and URL userinfo rejection.
 - SSRF tests for injected clients: blocked redirect to the metadata IP, public redirects
   still followed, hook added once after user hooks, and opt-out leaving the client alone.
+- `Settings.max_redirects` (default 10, range 0 to 30, `SCRAPEKIT_MAX_REDIRECTS`) with
+  tests for redirect loops, chains within the cap, `0` disabling redirects, and bounds.
 
 ### Changed
 
@@ -50,6 +52,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Before, only the first URL was checked, so a client created with
   `follow_redirects=True` could follow a 302 into a private or metadata host. The
   hook is appended once, after any existing request hooks.
+- Redirects are capped at `max_redirects` (default 10, down from the httpx default
+  of 20). Redirect hops skip the per-host rate limiter and robots.txt check, so a
+  hostile redirect loop could make one fetch hit a host 21 times. Longer chains now
+  raise `httpx.TooManyRedirects`, which is not retried. Injected clients keep their
+  own `max_redirects`.
 
 ## [0.1.0] - 2026-09-04
 

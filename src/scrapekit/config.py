@@ -83,6 +83,17 @@ class Settings(BaseSettings):
             "this limit, raise ResponseTooLargeError to avoid memory blowups."
         ),
     )
+    max_redirects: int = Field(
+        default=10,
+        ge=0,
+        le=30,
+        description=(
+            "Maximum redirects followed per fetch (default 10, httpx allows 20). "
+            "Redirect hops skip the per-host rate limiter and robots.txt check, "
+            "so a short cap stops redirect loops from amplifying traffic. "
+            "Longer chains raise httpx.TooManyRedirects."
+        ),
+    )
     log_level: str = Field(
         default="INFO",
         description="Logging level (DEBUG, INFO, WARNING, ERROR).",

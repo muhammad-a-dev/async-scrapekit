@@ -56,6 +56,19 @@ Do **not** open a public issue for undisclosed security problems.
   cut off mid-line at the limit is dropped instead of evaluated, so a hostile
   origin cannot use a giant robots.txt to exhaust memory.
 
+## Redirect limits
+
+- The built-in client follows at most `max_redirects` redirects per fetch
+  (default 10, override with `SCRAPEKIT_MAX_REDIRECTS`, allowed range 0 to 30).
+  httpx alone allows 20.
+- Redirect hops are followed inside httpx, so they do not pass through the
+  per-host rate limiter or the robots.txt check. The cap keeps a redirect loop
+  from turning one fetch into many requests against the same host.
+- Going past the cap raises `httpx.TooManyRedirects`. It is not retried.
+  Set `max_redirects=0` to refuse every redirect.
+- An `httpx.AsyncClient` passed via `client=` keeps its own `max_redirects`.
+  Set it on that client if you need a tighter limit.
+
 ## Extraction hygiene
 
 - `extract_links` drops `javascript:`, `mailto:`, `data:`, `vbscript:`, and `tel:`
