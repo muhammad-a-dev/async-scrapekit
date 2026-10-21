@@ -48,9 +48,13 @@ Do **not** open a public issue for undisclosed security problems.
   override with `SCRAPEKIT_MAX_RESPONSE_BYTES`).
 - When `Content-Length` is present and over the limit, the client raises
   `ResponseTooLargeError` before treating the body as usable scrape input.
-- The loaded body length is checked the same way when the header is missing or
-  understates the size, so a single huge page cannot quietly exhaust memory
-  during extraction.
+- Bodies are streamed, and reading stops at the first chunk that pushes the
+  total past the limit. When `Content-Length` is missing (chunked responses) or
+  understates the size, at most one chunk past the cap is ever held in memory,
+  and the rest of the body is never downloaded.
+- The limit counts decoded bytes, after gzip, deflate, or brotli is undone, so a
+  tiny compressed body that inflates to gigabytes (a compression bomb) is cut
+  off too.
 - robots.txt is streamed and only the first 500 KiB is read (the minimum
   RFC 9309 asks parsers to handle). Anything past that is ignored, and a rule
   cut off mid-line at the limit is dropped instead of evaluated, so a hostile

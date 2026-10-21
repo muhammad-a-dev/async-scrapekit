@@ -79,8 +79,9 @@ class Settings(BaseSettings):
         ge=1,
         description=(
             "Maximum response body size in bytes (default 10 MiB). "
-            "Fetches that declare a larger Content-Length, or whose body exceeds "
-            "this limit, raise ResponseTooLargeError to avoid memory blowups."
+            "Fetches that declare a larger Content-Length, or whose decoded body "
+            "passes this limit while streaming, raise ResponseTooLargeError and "
+            "stop reading, to avoid memory blowups."
         ),
     )
     max_redirects: int = Field(

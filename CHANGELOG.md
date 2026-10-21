@@ -24,6 +24,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   still followed, hook added once after user hooks, and opt-out leaving the client alone.
 - `Settings.max_redirects` (default 10, range 0 to 30, `SCRAPEKIT_MAX_REDIRECTS`) with
   tests for redirect loops, chains within the cap, `0` disabling redirects, and bounds.
+- Streaming size cap tests: chunked body aborted after the chunk that crosses the
+  cap (no retry), gzip bomb measured after decoding, body exactly at the cap, and
+  transient status retries still working with streamed reads.
 
 ### Changed
 
@@ -57,6 +60,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   hostile redirect loop could make one fetch hit a host 21 times. Longer chains now
   raise `httpx.TooManyRedirects`, which is not retried. Injected clients keep their
   own `max_redirects`.
+- `max_response_bytes` is now enforced while streaming. Before, the full body was
+  loaded into memory and only then measured, so a chunked response with no
+  `Content-Length` (or a gzip bomb) could use far more memory than the cap.
+  `fetch` now reads the decoded body chunk by chunk and aborts with
+  `ResponseTooLargeError` as soon as the limit is passed.
 
 ## [0.1.0] - 2026-09-04
 
